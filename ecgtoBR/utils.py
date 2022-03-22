@@ -47,8 +47,12 @@ def smooth(signal,window_len=50):
         ndarray   -- smoothed signal
     """
     
-    y = pd.DataFrame(signal).rolling(window_len,center = True, min_periods = 1).mean().values.reshape((-1,))
-    return y
+    return (
+        pd.DataFrame(signal)
+        .rolling(window_len, center=True, min_periods=1)
+        .mean()
+        .values.reshape((-1,))
+    )
 
 def findValleys(signal, prominence = 0.07):
     """Find valleys of distance transform to estimate breath positions   
@@ -62,9 +66,7 @@ def findValleys(signal, prominence = 0.07):
         ndarray -- valley locations in signal
     """
     smoothened = smooth(-1*signal)
-    valley_loc = scipy.signal.find_peaks(smoothened, prominence= prominence)[0]
-    
-    return valley_loc
+    return scipy.signal.find_peaks(smoothened, prominence= prominence)[0]
 
 def getBR(signal, model):
     """ Get Breathing Rate after passing ECG through Model
@@ -121,23 +123,19 @@ def dist_transform(signal, ann):
     sample = 0
     if len(ann) == 0:
         return None
-    if len(ann) ==1:
-        for i in range(length):
+    for i in range(length):
+        if len(ann) ==1:
             transform.append(abs(i-ann[sample]))
-    else:
-        for i in range(length):
-
+        else:
             if sample+1 == len(ann):
-                for j in range(i,length):
-
-                    transform.append(abs(j - nextAnn))
+                transform.extend(abs(j - nextAnn) for j in range(i,length))
                 break
             prevAnn = ann[sample]
             nextAnn = ann[sample+1]
-            middle = int((prevAnn + nextAnn )/2) 
+            middle = int((prevAnn + nextAnn )/2)
             if i < middle:
                 transform.append(abs(i - prevAnn))
-            elif i>= middle:
+            else:
                 transform.append(abs(i- nextAnn))
             if i == nextAnn:
                 sample+=1

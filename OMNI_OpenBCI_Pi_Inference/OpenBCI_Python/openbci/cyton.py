@@ -82,7 +82,7 @@ class OpenBCICyton(object):
         self.port = port
         # might be handy to know API
         self.board_type = "cyton"
-        print("Connecting to V3 at port %s" % (port))
+        print(f"Connecting to V3 at port {port}")
         if port == "loop://":
             # For testing purposes
             self.ser = serial.serial_for_url(port, baudrate=baud, timeout=timeout)
@@ -141,10 +141,7 @@ class OpenBCICyton(object):
         return self.ser.inWaiting()
 
     def getSampleRate(self):
-        if self.daisy:
-            return SAMPLE_RATE / 2
-        else:
-            return SAMPLE_RATE
+        return SAMPLE_RATE / 2 if self.daisy else SAMPLE_RATE
 
     def getNbEEGChannels(self):
         if self.daisy:
@@ -223,15 +220,11 @@ class OpenBCICyton(object):
 
     def _read_serial_binary(self, max_bytes_to_skip=3000):
         def read(n):
-            bb = self.ser.read(n)
-            if not bb:
-                self.warn('Device appears to be stalled. Quitting...')
-                sys.exit()
-                raise Exception('Device Stalled')
-                sys.exit()
-                return '\xFF'
-            else:
+            if bb := self.ser.read(n):
                 return bb
+            self.warn('Device appears to be stalled. Quitting...')
+            sys.exit()
+            raise Exception('Device Stalled')
 
         for rep in range(max_bytes_to_skip):
 
@@ -346,7 +339,7 @@ class OpenBCICyton(object):
                              str(self.log_packet_count))
                 self.log_packet_count = 0
             logging.warning(text)
-        print("Warning: %s" % text)
+        print(f"Warning: {text}")
 
     def print_incoming_text(self):
         """
@@ -427,40 +420,39 @@ class OpenBCICyton(object):
                 packet_str = packet_str + "%03d" % (b) + '|'
 
                 # data channels
-                for i in range(24 - 1):
+                for _ in range(24 - 1):
                     b = struct.unpack('B', self.ser.read())[0]
-                    packet_str = packet_str + '.' + "%03d" % (b)
+                    packet_str = f'{packet_str}.' + "%03d" % (b)
 
                 b = struct.unpack('B', self.ser.read())[0]
-                packet_str = packet_str + '.' + "%03d" % (b) + '|'
+                packet_str = f'{packet_str}.' + "%03d" % (b) + '|'
 
                 # aux channels
-                for i in range(6 - 1):
+                for _ in range(6 - 1):
                     b = struct.unpack('B', self.ser.read())[0]
-                    packet_str = packet_str + '.' + "%03d" % (b)
+                    packet_str = f'{packet_str}.' + "%03d" % (b)
 
                 b = struct.unpack('B', self.ser.read())[0]
-                packet_str = packet_str + '.' + "%03d" % (b) + '|'
+                packet_str = f'{packet_str}.' + "%03d" % (b) + '|'
 
                 # end byte
                 b = struct.unpack('B', self.ser.read())[0]
 
                 # Valid Packet
                 if b == END_BYTE:
-                    packet_str = packet_str + '.' + "%03d" % (b) + '|VAL'
+                    packet_str = f'{packet_str}.' + "%03d" % (b) + '|VAL'
                     print(packet_str)
-                    # logging.debug(packet_str)
+                                # logging.debug(packet_str)
 
-                # Invalid Packet
                 else:
-                    packet_str = packet_str + '.' + "%03d" % (b) + '|INV'
+                    packet_str = f'{packet_str}.' + "%03d" % (b) + '|INV'
                     # Reset
                     self.attempt_reconnect = True
 
             else:
                 print(b)
                 if b == END_BYTE:
-                    skipped_str = skipped_str + '|END|'
+                    skipped_str = f'{skipped_str}|END|'
                 else:
                     skipped_str = skipped_str + "%03d" % (b) + '.'
 
@@ -523,7 +515,7 @@ class OpenBCICyton(object):
             self.ser.write(b']')
             self.warn("Connecting pins to high frequency 2x amp signal")
         else:
-            self.warn("%s is not a known test signal. Valid signals go from 0-5" % signal)
+            self.warn(f"{signal} is not a known test signal. Valid signals go from 0-5")
 
     def set_channel(self, channel, toggle_position):
         """ Enable / disable channels """
@@ -599,7 +591,7 @@ class OpenBCICyton(object):
     def find_port(self):
         # Finds the serial port names
         if sys.platform.startswith('win'):
-            ports = ['COM%s' % (i + 1) for i in range(256)]
+            ports = [f'COM{i + 1}' for i in range(256)]
         elif sys.platform.startswith('linux') or sys.platform.startswith('cygwin'):
             ports = glob.glob('/dev/ttyUSB*')
         elif sys.platform.startswith('darwin'):

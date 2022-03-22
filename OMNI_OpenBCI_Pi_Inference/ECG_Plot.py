@@ -154,15 +154,15 @@ def create_dashboard(data, peaks):
    
     def update():
         global i,j,cnt,xk,yk,text,k,hr
-        
+
         s4.clear()
         ax.pop(0)
-        
+
         if(len(xk)!=0 and xk[0] < 1):
             xk.pop(0)
             yk.pop(0)
         xk = [x-1 for x in xk]
-        
+
         if(i+1<len(data[j])):
             i += 1
             if(cnt < len(peaks[j]) and i == peaks[j][cnt]):
@@ -176,7 +176,7 @@ def create_dashboard(data, peaks):
             i = 0
         if(hr>150):
             hr = 50
-        
+
         ax.append(float(data[j][i]))
         posx = [x - 1 for x in xk]
         posy = yk
@@ -190,12 +190,12 @@ def create_dashboard(data, peaks):
         #     p1.addItem(img1)
         #     p1.addItem(text) 
         #     p1.addItem(texthr) 
-    
-        
-        text.setText('{}' .format(hr))
 
-        
-        text1.setText('{}' .format(hr))
+
+        text.setText(f'{hr}')
+
+
+        text1.setText(f'{hr}')
         if hr<100:
             text.setPos(95, y.max()/2 - 160)
             text1.setPos(95, y.max()/2 - 160)

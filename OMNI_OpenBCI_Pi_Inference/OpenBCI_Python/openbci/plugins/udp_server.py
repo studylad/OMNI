@@ -64,11 +64,11 @@ class UDPServer(plugintypes.IPluginExtended):
             self.port = int(self.args[1])
 
         # init network
-        print("Selecting raw UDP streaming. IP: " + self.ip + ", port: " + str(self.port))
+        print(f"Selecting raw UDP streaming. IP: {self.ip}, port: {str(self.port)}")
 
         self.server = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 
-        print("Server started on port " + str(self.port))
+        print(f"Server started on port {str(self.port)}")
 
     def __call__(self, sample):
         self.send_data(json.dumps(sample.channel_data))

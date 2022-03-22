@@ -80,11 +80,7 @@ def streamData(sample):
     # TODO: duplicate packet if skipped to stay sync
     if sample.id != last_id + 1:
         print("time", tick, ": paquet skipped!")
-    if sample.id == 255:
-        last_id = -1
-    else:
-        last_id = sample.id
-
+    last_id = -1 if sample.id == 255 else sample.id
     # update counters
     global nb_samples_in, nb_samples_out
     nb_samples_in = nb_samples_in + 1
@@ -109,7 +105,7 @@ def streamData(sample):
     if (leftover_duplications > 1):
         leftover_duplications = leftover_duplications - 1
         interpol_values = list(last_values)
-        for i in range(0, len(interpol_values)):
+        for i in range(len(interpol_values)):
             # OK, it's a very rough interpolation
             interpol_values[i] = (last_values[i] + sample.channel_data[i]) / 2
         if DEBUG:

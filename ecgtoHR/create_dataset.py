@@ -16,7 +16,7 @@ from utils import dist_transform,getWindow
 def data_preprocess(args):
     
     PATH = args.data_path
-    all_paths = sorted(glob.glob(PATH + '/*.dat'))
+    all_paths = sorted(glob.glob(f'{PATH}/*.dat'))
     all_paths = [paths[:-4] for paths in all_paths]
 
     windowed_data,windowed_beats = getWindow(all_paths)
@@ -26,7 +26,7 @@ def data_preprocess(args):
     dist_tran_data = []
 
     for window in range(len(windowed_data)):
-        
+
         beats = ((windowed_beats[window] * 500/360).astype(int))
         if(len(beats) != 0):
             mod_windowed_data.append(scaler.fit_transform(resample(windowed_data[window],5000).reshape(-1,1)))

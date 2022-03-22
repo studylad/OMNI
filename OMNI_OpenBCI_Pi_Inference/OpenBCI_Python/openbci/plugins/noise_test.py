@@ -26,10 +26,7 @@ class PluginNoiseTest(plugintypes.IPluginExtended):
         self.diff = np.zeros(self.eeg_channels)
         self.last_report = timeit.default_timer()
         self.sample_count = 0
-        self.polling_interval = 1.0
-
-        if len(self.args) > 0:
-            self.polling_interval = float(self.args[0])
+        self.polling_interval = float(self.args[0]) if len(self.args) > 0 else 1.0
 
     def show_help(self):
         print("Optional argument: polling_interval -- in seconds, default: 10. \n \

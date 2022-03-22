@@ -60,7 +60,7 @@ class StreamerTCPServer(plugintypes.IPluginExtended):
             self.port = int(self.args[1])
 
         # init network
-        print("Selecting raw TCP streaming. IP: " + self.ip + ", port: " + str(self.port))
+        print(f"Selecting raw TCP streaming. IP: {self.ip}, port: {str(self.port)}")
         self.initialize()
 
         # init the daemon that monitors connections
@@ -78,7 +78,7 @@ class StreamerTCPServer(plugintypes.IPluginExtended):
         # create connection
         self.server_socket.bind((self.ip, self.port))
         self.server_socket.listen(1)
-        print("Server started on port " + str(self.port))
+        print(f"Server started on port {str(self.port)}")
 
     # From Streamer, to be called each time we're willing to accept new connections
     def check_connections(self):
@@ -120,11 +120,11 @@ class StreamerTCPServer(plugintypes.IPluginExtended):
                 else:
                     nb_channels = len(values)
                     # format for binary data, network endian (big) and float (float32)
-                    packer = struct.Struct('!%sf' % nb_channels)
+                    packer = struct.Struct(f'!{nb_channels}f')
                     # convert values to bytes
                     packed_data = packer.pack(*values)
                     sock.send(packed_data)
-                    # TODO: should check if the correct number of bytes passed through
+                                # TODO: should check if the correct number of bytes passed through
             except:
                 # sometimes (always?) it's only during the second write to a close socket
                 #  that an error is raised?

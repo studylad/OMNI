@@ -18,12 +18,12 @@ def train(args):
     """
     
     PATH = 'data'
-    X_train = torch.load(PATH + '/ecgtoBR_train_data.pt')
-    y_train = torch.load(PATH + '/ecgtoBR_train_labels.pt')
+    X_train = torch.load(f'{PATH}/ecgtoBR_train_data.pt')
+    y_train = torch.load(f'{PATH}/ecgtoBR_train_labels.pt')
 
-    X_test = torch.load(PATH + '/ecgtoBR_test_data.pt')
-    y_test = torch.load(PATH + '/ecgtoBR_test_labels.pt')
-    
+    X_test = torch.load(f'{PATH}/ecgtoBR_test_data.pt')
+    y_test = torch.load(f'{PATH}/ecgtoBR_test_labels.pt')
+
     BATCH_SIZE= 64
     NUM_EPOCHS = 400
     best_loss = 1000
@@ -51,9 +51,9 @@ def train(args):
         
         model.train()
         totalLoss = 0
-        
+
         for step,(x,y) in enumerate(trainLoader):
-            
+
             print('.',end = " ")
             ecg= x.cuda()
             BR = y.cuda()
@@ -63,21 +63,21 @@ def train(args):
             totalLoss += loss.cpu().item()
             loss.backward()
             optim.step()
-            
+
         print ('')
-        print ("Epoch:{} Train Loss:{}".format(epoch + 1,totalLoss/(step+1)))
-        
+        print(f"Epoch:{epoch + 1} Train Loss:{totalLoss / (step+1)}")
+
         totalTestLoss = testDataEval(model, valLoader, criterion)
         scheduler.step()
-        
+
         if best_loss > totalTestLoss:
             print ("........Saving Best Model........")
             best_loss = totalTestLoss
             save_model("Saved_Model", epoch, model, optim, best_loss )
-        
+
         writer.add_scalar("Loss/test",totalTestLoss, epoch )
         writer.add_scalar("Loss/train",totalLoss/(step+1),epoch )
-            
+
     writer.close()
 
 

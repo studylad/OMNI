@@ -39,13 +39,13 @@ class ParseRaw(object):
         out = []
         for gain in gains:
             scale_factor = k.ADS1299_VREF / float((pow(2, 23) - 1)) / float(gain)
-            if micro_volts is None:
-                if self.micro_volts:
-                    scale_factor *= 1000000.
-            else:
-                if micro_volts:
-                    scale_factor *= 1000000.
-
+            if (
+                micro_volts is None
+                and self.micro_volts
+                or micro_volts is not None
+                and micro_volts
+            ):
+                scale_factor *= 1000000.
             out.append(scale_factor)
         return out
 
@@ -58,9 +58,10 @@ class ParseRaw(object):
         channel_data = []
         number_of_channels = len(raw_data_to_sample.scale_factors)
         daisy = number_of_channels == k.NUMBER_OF_CHANNELS_DAISY
-        channels_in_packet = k.NUMBER_OF_CHANNELS_CYTON
-        if not daisy:
-            channels_in_packet = number_of_channels
+        channels_in_packet = (
+            k.NUMBER_OF_CHANNELS_CYTON if daisy else number_of_channels
+        )
+
         # Channel data arrays are always 8 long
 
         for i in range(channels_in_packet):
@@ -180,11 +181,15 @@ class ParseRaw(object):
                 sample = self.parse_packet_standard_accel(self.raw_data_to_sample)
             elif packet_type == k.RAW_PACKET_TYPE_STANDARD_RAW_AUX:
                 sample = self.parse_packet_standard_raw_aux(self.raw_data_to_sample)
-            elif packet_type == k.RAW_PACKET_TYPE_ACCEL_TIME_SYNC_SET or \
-                    packet_type == k.RAW_PACKET_TYPE_ACCEL_TIME_SYNCED:
+            elif packet_type in [
+                k.RAW_PACKET_TYPE_ACCEL_TIME_SYNC_SET,
+                k.RAW_PACKET_TYPE_ACCEL_TIME_SYNCED,
+            ]:
                 sample = self.parse_packet_time_synced_accel(self.raw_data_to_sample)
-            elif packet_type == k.RAW_PACKET_TYPE_RAW_AUX_TIME_SYNC_SET or \
-                    packet_type == k.RAW_PACKET_TYPE_RAW_AUX_TIME_SYNCED:
+            elif packet_type in [
+                k.RAW_PACKET_TYPE_RAW_AUX_TIME_SYNC_SET,
+                k.RAW_PACKET_TYPE_RAW_AUX_TIME_SYNCED,
+            ]:
                 sample = self.parse_packet_time_synced_raw_aux(self.raw_data_to_sample)
             else:
                 sample = OpenBCISample()
@@ -194,10 +199,7 @@ class ParseRaw(object):
             sample.packet_type = packet_type
         except BaseException as e:
             sample = OpenBCISample()
-            if hasattr(e, 'message'):
-                sample.error = e.message
-            else:
-                sample.error = e
+            sample.error = e.message if hasattr(e, 'message') else e
             sample.valid = False
 
         return sample

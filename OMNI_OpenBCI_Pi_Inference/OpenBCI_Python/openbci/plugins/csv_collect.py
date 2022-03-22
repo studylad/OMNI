@@ -21,18 +21,18 @@ class PluginCSVCollect(plugintypes.IPluginExtended):
             if 'no_time' in self.args:
                 self.file_name = self.args[0]
             else:
-                self.file_name = self.args[0] + '_' + self.file_name
+                self.file_name = f'{self.args[0]}_{self.file_name}'
             if 'verbose' in self.args:
                 self.verbose = True
 
-        self.file_name = self.file_name + '.csv'
-        print("Will export CSV to:" + self.file_name)
+        self.file_name = f'{self.file_name}.csv'
+        print(f"Will export CSV to:{self.file_name}")
         # Open in append mode
         with open(self.file_name, 'a') as f:
-            f.write('%' + self.time_stamp + '\n')
+            f.write(f'%{self.time_stamp}' + '\n')
 
     def deactivate(self):
-        print("Closing, CSV saved to:" + self.file_name)
+        print(f"Closing, CSV saved to:{self.file_name}")
         return
 
     def show_help(self):
@@ -45,8 +45,7 @@ class PluginCSVCollect(plugintypes.IPluginExtended):
         if self.verbose:
             print("CSV: %f | %d" % (t, sample.id))
 
-        row = ''
-        row += str(t)
+        row = '' + str(t)
         row += self.delim
         row += str(sample.id)
         row += self.delim

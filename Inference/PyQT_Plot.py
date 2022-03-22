@@ -203,15 +203,15 @@ def create_dashboard(data, peaks,all_hr, all_br):
    
     def update():
         global i, win, rpindex, rpeakx, rpeaky, hr, br, hrslid, brslid, slidflaghr, slidflagbr, slidPoshr, slidPosbr, hrindex, chk, chkbr, popflag, trigflag, popwind
-        
+
         rpeaks.clear()
         ecg.pop(0)
-  
+
         if(len(rpeakx)!=0 and rpeakx[0] < 1):
             rpeakx.pop(0)
             rpeaky.pop(0)
         rpeakx = [x-1 for x in rpeakx]
-        
+
         if(i+1<len(data[win])):
             i += 1
             if(rpindex < len(peaks[win]) and i == peaks[win][rpindex]):
@@ -222,7 +222,7 @@ def create_dashboard(data, peaks,all_hr, all_br):
             rpindex = 0 
             win += 1
             i = 0
-      
+
         if 100 <= hr <110:
             meterhr = -1
             slidflaghr = 1
@@ -236,11 +236,10 @@ def create_dashboard(data, peaks,all_hr, all_br):
         elif hr >= 160:
             popflag = 1
             meterhr = 2
-            slidflaghr = 1  
-        else:
-            if(slidPoshr != 0.5):
-                slidflaghr = 1
-                meterhr = 0
+            slidflaghr = 1
+        elif (slidPoshr != 0.5):
+            slidflaghr = 1
+            meterhr = 0
         if br > 45:
             popflag = 1
             slidflagbr = 1
@@ -254,54 +253,56 @@ def create_dashboard(data, peaks,all_hr, all_br):
                 popwind.setText("Heart Rate Low\nSeek medical attention if low heart rate persists")
             else:
                 popwind.setText("Breathing Rate Abnormal\nSeek medical attention if following symptoms are displayed:\n1) Blueness\n2) Severe chest indrawing")
-            
+
             popwind.show()
-        
+
         if slidflaghr == 1 and chk == 1:
             
             slidDest, direct = slider(meterhr, slidPoshr)
             slidPoshr += direct * 0.002
-            
-            if(direct == -1):
-                if slidPoshr <= slidDest:
-                    slidflaghr = 0
-                    chk = 0
-            elif(direct == 1):
-                if slidPoshr >= slidDest:
-                    slidflaghr = 0
-                    chk = 0
+
+            if (
+                (direct == -1)
+                and slidPoshr <= slidDest
+                or direct != -1
+                and direct == 1
+                and slidPoshr >= slidDest
+            ):
+                slidflaghr = 0
+                chk = 0
             hrslid.setPos(slidPoshr)    
 
         if slidflagbr == 1 and chkbr == 1:
             slidDestbr, directbr = slider(meterbr, slidPosbr)
             slidPosbr += directbr * 0.002
-            if(directbr == -1):
-                if slidPosbr <= slidDestbr:
-                    slidflagbr = 0
-                    chkbr = 0
-            elif(directbr == 1):
-                if slidPosbr >= slidDestbr:
-                    slidflagbr = 0
-                    chkbr = 0
+            if (
+                (directbr == -1)
+                and slidPosbr <= slidDestbr
+                or directbr != -1
+                and directbr == 1
+                and slidPosbr >= slidDestbr
+            ):
+                slidflagbr = 0
+                chkbr = 0
             brslid.setPos(slidPosbr)  
 
         ecg.append(float(data[win][i]))
         rpkx = [x - 1 for x in rpeakx]
         rpky = rpeaky
-     
+
         if i % 2500 == 0:
-            
+
             hrindex += 1
             hr = all_hr[hrindex] - 15
             br = all_br[hrindex] + 31
             chk = 1
             chkbr = 1
             trigflag = 1
-            
-        hrval.setText('{} ' .format(hr))
-        brval.setText('{} ' .format(br))
+
+        hrval.setText(f'{hr} ')
+        brval.setText(f'{br} ')
         popflag = 0
-        
+
         if hr<100:
             hrval.setPos(95, -159.5253)
         else:
@@ -313,16 +314,23 @@ def create_dashboard(data, peaks,all_hr, all_br):
 
     def slider(meter, slidPoshr):
 
-        if meter == -2:
-            slidDest = 0
-            direct = -1
-        elif meter == -1:
+        if meter == -1:
             slidDest = 0.25
             if slidPoshr>0.5:
                 direct = -1
             elif slidPoshr<0.5:
                 direct = 1
             direct = -1
+        elif meter == -2:
+            slidDest = 0
+            direct = -1
+        elif meter == 0:
+            slidDest = 0.5
+            if slidPoshr>0.5:
+                direct = -1
+            elif slidPoshr<0.5:
+                direct = 1
+
         elif meter == 1:
             slidDest = 0.75
             if slidPoshr>0.5:
@@ -332,13 +340,6 @@ def create_dashboard(data, peaks,all_hr, all_br):
         elif meter == 2:
             slidDest = 1
             direct = 1
-        elif meter == 0:
-            slidDest = 0.5
-            if slidPoshr>0.5:
-                direct = -1
-            elif slidPoshr<0.5:
-                direct = 1
-
         return slidDest, direct
         
     timer.timeout.connect(update)
