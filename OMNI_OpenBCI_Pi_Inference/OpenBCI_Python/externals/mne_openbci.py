@@ -69,9 +69,9 @@ class RawOpenBCI(_BaseRaw):
 
         bci_info = {'missing_tol': missing_tol, 'stim_channel': stim_channel}
         if not eog:
-            eog = list()
+            eog = []
         if not misc:
-            misc = list()
+            misc = []
         nsamps, nchan = self._get_data_dims(input_fname)
 
         last_samps = [nsamps - 1]
@@ -102,7 +102,7 @@ class RawOpenBCI(_BaseRaw):
         # load data
         if preload:
             self.preload = preload
-            logger.info('Reading raw data from %s...' % input_fname)
+            logger.info(f'Reading raw data from {input_fname}...')
             self._data, _ = self._read_segment()
 
     def _read_segment_file(self, data, idx, offset, fi, start, stop,
@@ -144,7 +144,7 @@ class RawOpenBCI(_BaseRaw):
             missing_cumsum = np.insert(np.cumsum(missing_samps), 0, 0)[:-1]
             missing_data = np.empty((missing_nsamps, data_.shape[-1]),
                                     dtype=float)
-            insert_idx = list()
+            insert_idx = []
             for idx_, nn, ii in zip(missing_idx, missing_samps,
                                     missing_cumsum):
                 missing_data[ii:ii + nn] = np.mean(data_[(idx_, idx_ + 1), :])
@@ -228,8 +228,7 @@ def read_raw_openbci(input_fname, montage=None, eog=None, misc=(-3, -2, -1),
     --------
     mne.io.Raw : Documentation of attribute and methods.
     """
-    raw = RawOpenBCI(input_fname=input_fname, montage=montage, eog=eog,
+    return RawOpenBCI(input_fname=input_fname, montage=montage, eog=eog,
                      misc=misc, stim_channel=stim_channel, scale=scale,
                      sfreq=sfreq, missing_tol=missing_tol, preload=preload,
                      verbose=verbose)
-    return raw

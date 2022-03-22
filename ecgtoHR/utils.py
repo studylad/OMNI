@@ -11,7 +11,7 @@ from tqdm import tqdm
 import wfdb as wf
 
 def dist_transform(window_size, ann):
-    
+
     """ Compute distance transform of Respiration signaal based on breath positions
     Arguments:
         window_size{int} -- Window Length  
@@ -27,23 +27,19 @@ def dist_transform(window_size, ann):
     if len(ann) == 0:
         return None
 
-    if len(ann) ==1:
-        for i in range(window_size):
+    for i in range(length):
+        if len(ann) ==1:
             transform.append(abs(i-ann[sample]))
-    else:
-        for i in range(window_size):
-
+        else:
             if sample+1 == len(ann):
-                for j in range(i,window_size):
-
-                    transform.append(abs(j - nextAnn))
+                transform.extend(abs(j - nextAnn) for j in range(i, length))
                 break
             prevAnn = ann[sample]
             nextAnn = ann[sample+1]
-            middle = int((prevAnn + nextAnn )/2) 
+            middle = int((prevAnn + nextAnn )/2)
             if i < middle:
                 transform.append(abs(i - prevAnn))
-            elif i>= middle:
+            else:
                 transform.append(abs(i- nextAnn))
             if i == nextAnn:
                 sample+=1
@@ -54,7 +50,7 @@ def dist_transform(window_size, ann):
     return transform
 
 def getWindow(all_paths):
-    
+
     """ Windowing the ECG and its corresponding Distance Transform
     Arguments:
         all_paths{list} -- Paths to all the ECG files
@@ -66,7 +62,9 @@ def getWindow(all_paths):
     windowed_beats = []
     count = 0
     count1 = 0
-    
+
+    ### Checking for Beat annotations
+    non_required_labels = ['[','!',']','x','(',')','p','t','u','`',"'",'^','|','~','+','s','T','*','D','=','"','@']
     for path in tqdm(all_paths):
         
         ann    = wf.rdann(path,'atr')
@@ -78,8 +76,6 @@ def getWindow(all_paths):
 
         ini_index = 0
         final_index = 0
-        ### Checking for Beat annotations
-        non_required_labels = ['[','!',']','x','(',')','p','t','u','`',"'",'^','|','~','+','s','T','*','D','=','"','@']
         for window in range(len(data) // 3600):
             count += 1
             for r_peak in range(ini_index,len_beats):
@@ -91,9 +87,12 @@ def getWindow(all_paths):
             record_labs = labels[ini_index: final_index]
             to_del_index = []
             for actual_lab in range(len(record_labs)):
-                for lab in range(len(non_required_labels)):
-                    if(record_labs[actual_lab] == non_required_labels[lab]):
-                        to_del_index.append(actual_lab)
+                to_del_index.extend(
+                    actual_lab
+                    for non_required_label in non_required_labels
+                    if record_labs[actual_lab] == non_required_label
+                )
+
             for indice in range(len(to_del_index)-1,-1,-1):
                 del record_anns[to_del_index[indice]]
             windowed_beats.append(np.asarray(record_anns) - (window) * 3600)
@@ -154,9 +153,7 @@ def save_model(exp_dir, epoch, model, optimizer,best_dev_loss):
     )
 
 def findValleys(signal, prominence = 10, is_smooth = True , distance = 10):
-    
+
     """ Return prominent peaks and valleys based on scipy's find_peaks function """
     smoothened = smooth(-1*signal)
-    valley_loc = scipy.signal.find_peaks(smoothened, prominence= 0.07)[0]
-    
-    return valley_loc
+    return scipy.signal.find_peaks(smoothened, prominence= 0.07)[0]

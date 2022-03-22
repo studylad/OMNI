@@ -25,9 +25,10 @@ class TestParseRaw(TestCase):
 
         scale_factors = parser.get_ads1299_scale_factors(expected_gains)
 
-        expected_channel_data = []
-        for i in range(Constants.NUMBER_OF_CHANNELS_CYTON):
-            expected_channel_data.append(scale_factors[i] * (i + 1))
+        expected_channel_data = [
+            scale_factors[i] * (i + 1)
+            for i in range(Constants.NUMBER_OF_CHANNELS_CYTON)
+        ]
 
         parser.raw_data_to_sample.raw_data_packet = data
 
@@ -42,9 +43,10 @@ class TestParseRaw(TestCase):
 
         parser = ParseRaw(gains=[24, 24, 24, 24, 24, 24, 24, 24], scaled_output=True)
 
-        expected_accel_data = []
-        for i in range(Constants.RAW_PACKET_ACCEL_NUMBER_AXIS):
-            expected_accel_data.append(Constants.CYTON_ACCEL_SCALE_FACTOR_GAIN * i)
+        expected_accel_data = [
+            Constants.CYTON_ACCEL_SCALE_FACTOR_GAIN * i
+            for i in range(Constants.RAW_PACKET_ACCEL_NUMBER_AXIS)
+        ]
 
         parser.raw_data_to_sample.raw_data_packet = data
 

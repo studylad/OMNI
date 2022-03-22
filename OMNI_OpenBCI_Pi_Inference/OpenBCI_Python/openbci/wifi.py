@@ -106,7 +106,7 @@ class OpenBCIWiFi(object):
                   (self.local_ip_address, self.local_wifi_server_port))
 
         if ip_address is None:
-            for i in range(ssdp_attempts):
+            for _ in range(ssdp_attempts):
                 try:
                     self.find_wifi_shield(wifi_shield_cb=self.on_shield_found)
                     break
@@ -151,14 +151,14 @@ class OpenBCIWiFi(object):
             raise ValueError('self.ip_address cannot be None')
 
         if self.log:
-            print("Init WiFi connection with IP: " + self.ip_address)
+            print(f"Init WiFi connection with IP: {self.ip_address}")
 
         """
         Docs on these HTTP requests and more are found:
         https://app.swaggerhub.com/apis/pushtheworld/openbci-wifi-server/1.3.0
         """
 
-        res_board = requests.get("http://%s/board" % self.ip_address)
+        res_board = requests.get(f"http://{self.ip_address}/board")
 
         if res_board.status_code == 200:
             board_info = res_board.json()
@@ -169,8 +169,10 @@ class OpenBCIWiFi(object):
             self.board_type = board_info['board_type']
             self.eeg_channels_per_sample = board_info['num_channels']
             if self.log:
-                print("Connected to %s with %s channels" %
-                      (self.board_type, self.eeg_channels_per_sample))
+                print(
+                    f"Connected to {self.board_type} with {self.eeg_channels_per_sample} channels"
+                )
+
 
         self.gains = None
         if self.board_type == Constants.BOARD_CYTON:
@@ -187,39 +189,32 @@ class OpenBCIWiFi(object):
         self.local_wifi_server.set_parser(
             ParseRaw(gains=self.gains, board_type=self.board_type))
 
-        if self.high_speed:
-            output_style = 'raw'
-        else:
-            output_style = 'json'
-        res_tcp_post = requests.post("http://%s/tcp" % self.ip_address,
-                                     json={
-                                         'ip': self.local_ip_address,
-                                         'port': self.local_wifi_server_port,
-                                         'output': output_style,
-                                         'delimiter': True,
-                                         'latency': self.latency
-                                     })
+        output_style = 'raw' if self.high_speed else 'json'
+        res_tcp_post = requests.post(f"http://{self.ip_address}/tcp", json={
+                                             'ip': self.local_ip_address,
+                                             'port': self.local_wifi_server_port,
+                                             'output': output_style,
+                                             'delimiter': True,
+                                             'latency': self.latency
+                                         })
         if res_tcp_post.status_code == 200:
             tcp_status = res_tcp_post.json()
-            if tcp_status['connected']:
-                if self.log:
-                    print("WiFi Shield to Python TCP Socket Established")
-            else:
+            if not tcp_status['connected']:
                 raise RuntimeWarning("WiFi Shield is not able to connect to local server."
                                      "Please open an issue.")
+            if self.log:
+                print("WiFi Shield to Python TCP Socket Established")
 
     def init_streaming(self):
         """ Tell the board to record like crazy. """
-        res_stream_start = requests.get(
-            "http://%s/stream/start" % self.ip_address)
-        if res_stream_start.status_code == 200:
-            self.streaming = True
-            self.packets_dropped = 0
-            self.time_last_packet = timeit.default_timer()
-        else:
+        res_stream_start = requests.get(f"http://{self.ip_address}/stream/start")
+        if res_stream_start.status_code != 200:
             raise EnvironmentError("Unable to start streaming."
                                    "Check API for status code %d on /stream/start"
                                    % res_stream_start.status_code)
+        self.streaming = True
+        self.packets_dropped = 0
+        self.time_last_packet = timeit.default_timer()
 
     def find_wifi_shield(self, shield_name=None, wifi_shield_cb=None):
         """Detects Ganglion board MAC address if more than 1, will select first. Needs root."""
@@ -243,14 +238,11 @@ class OpenBCIWiFi(object):
             list_ip.append(cur_ip_address)
             found_shield = True
             if shield_name is None:
-                print("Found WiFi Shield %s with IP Address %s" %
-                      (cur_shield_name, cur_ip_address))
+                print(f"Found WiFi Shield {cur_shield_name} with IP Address {cur_ip_address}")
                 if wifi_shield_cb is not None:
                     wifi_shield_cb(cur_ip_address)
-            else:
-                if shield_name == cur_shield_name:
-                    if wifi_shield_cb is not None:
-                        wifi_shield_cb(cur_ip_address)
+            elif shield_name == cur_shield_name and wifi_shield_cb is not None:
+                wifi_shield_cb(cur_ip_address)
 
         ssdp_hits = ssdp.discover("urn:schemas-upnp-org:device:Basic:1", timeout=self.timeout,
                                   wifi_found_cb=wifi_shield_found)
@@ -274,8 +266,10 @@ class OpenBCIWiFi(object):
         :param output:
         :return:
         """
-        res_command_post = requests.post("http://%s/command" % self.ip_address,
-                                         json={'command': output})
+        res_command_post = requests.post(
+            f"http://{self.ip_address}/command", json={'command': output}
+        )
+
         if res_command_post.status_code == 200:
             ret_val = res_command_post.text
             if self.log:
@@ -347,15 +341,15 @@ class OpenBCIWiFi(object):
             try:
                 self.wifi_write(']')
             except Exception as e:
-                print("Something went wrong while setting signal: " + str(e))
+                print(f"Something went wrong while setting signal: {str(e)}")
         elif signal == 1:
             self.warn("Enabling synthetic square wave")
             try:
                 self.wifi_write('[')
             except Exception as e:
-                print("Something went wrong while setting signal: " + str(e))
+                print(f"Something went wrong while setting signal: {str(e)}")
         else:
-            self.warn("%s is not a known test signal. Valid signal is 0-1" % signal)
+            self.warn(f"{signal} is not a known test signal. Valid signal is 0-1")
 
     def set_channel(self, channel, toggle_position):
         """ Enable / disable channels """
@@ -431,7 +425,7 @@ class OpenBCIWiFi(object):
                 if channel is 16:
                     self.wifi_write('i')
         except Exception as e:
-            print("Something went wrong while setting channels: " + str(e))
+            print(f"Something went wrong while setting channels: {str(e)}")
 
     # See Cyton SDK for options
     def set_channel_settings(self, channel, enabled=True, gain=24, input_type=0,
@@ -452,17 +446,17 @@ class OpenBCIWiFi(object):
             # Set gain (default 24)
             if gain == 1:
                 command[3] = '0'
-            if gain == 2:
-                command[3] = '1'
-            if gain == 4:
-                command[3] = '2'
-            if gain == 6:
-                command[3] = '3'
-            if gain == 8:
-                command[3] = '4'
-            if gain == 12:
+            elif gain == 12:
                 command[3] = '5'
 
+            elif gain == 2:
+                command[3] = '1'
+            elif gain == 4:
+                command[3] = '2'
+            elif gain == 6:
+                command[3] = '3'
+            elif gain == 8:
+                command[3] = '4'
             # TODO: Implement input type (default normal)
 
             # Set bias inclusion (default include)
@@ -489,7 +483,7 @@ class OpenBCIWiFi(object):
     def set_sample_rate(self, sample_rate):
         """ Change sample rate """
         try:
-            if self.board_type == Constants.BOARD_CYTON or self.board_type == Constants.BOARD_DAISY:
+            if self.board_type in [Constants.BOARD_CYTON, Constants.BOARD_DAISY]:
                 if sample_rate == 250:
                     self.wifi_write('~6')
                 elif sample_rate == 500:
@@ -505,7 +499,7 @@ class OpenBCIWiFi(object):
                 elif sample_rate == 16000:
                     self.wifi_write('~0')
                 else:
-                    print("Sample rate not supported: " + str(sample_rate))
+                    print(f"Sample rate not supported: {str(sample_rate)}")
             elif self.board_type == Constants.BOARD_GANGLION:
                 if sample_rate == 200:
                     self.wifi_write('~7')
@@ -524,11 +518,11 @@ class OpenBCIWiFi(object):
                 elif sample_rate == 25600:
                     self.wifi_write('~0')
                 else:
-                    print("Sample rate not supported: " + str(sample_rate))
+                    print(f"Sample rate not supported: {str(sample_rate)}")
             else:
                 print("Board type not supported for setting sample rate")
         except Exception as e:
-            print("Something went wrong while setting sample rate: " + str(e))
+            print(f"Something went wrong while setting sample rate: {str(e)}")
 
     def set_accelerometer(self, toggle_position):
         """ Enable / disable accelerometer """
@@ -543,7 +537,7 @@ class OpenBCIWiFi(object):
             else:
                 print("Board type not supported for setting accelerometer")
         except Exception as e:
-            print("Something went wrong while setting accelerometer: " + str(e))
+            print(f"Something went wrong while setting accelerometer: {str(e)}")
 
     """
 
@@ -586,7 +580,7 @@ class OpenBCIWiFi(object):
                              str(self.log_packet_count))
                 self.log_packet_count = 0
             logging.warning(text)
-        print("Warning: %s" % text)
+        print(f"Warning: {text}")
 
     def check_connection(self):
         """ Check connection quality in term of lag and number of packets drop.
@@ -632,12 +626,19 @@ class WiFiShieldHandler(asyncore.dispatcher_with_send):
         data = self.recv(3000)
         if len(data) > 2:
             if self.high_speed:
-                packets = int(len(data) / 33)
-                raw_data_packets = []
-                for i in range(packets):
-                    raw_data_packets.append(
-                        bytearray(data[i * Constants.RAW_PACKET_SIZE: i * Constants.RAW_PACKET_SIZE +
-                                                                      Constants.RAW_PACKET_SIZE]))
+                packets = len(data) // 33
+                raw_data_packets = [
+                    bytearray(
+                        data[
+                            i
+                            * Constants.RAW_PACKET_SIZE : i
+                            * Constants.RAW_PACKET_SIZE
+                            + Constants.RAW_PACKET_SIZE
+                        ]
+                    )
+                    for i in range(packets)
+                ]
+
                 samples = self.parser.transform_raw_data_packets_to_sample(
                     raw_data_packets=raw_data_packets)
 
@@ -657,9 +658,8 @@ class WiFiShieldHandler(asyncore.dispatcher_with_send):
                                 self.last_odd_sample, sample)
                             if self.callback is not None:
                                 self.callback(daisy_sample)
-                    else:
-                        if self.callback is not None:
-                            self.callback(sample)
+                    elif self.callback is not None:
+                        self.callback(sample)
 
             else:
                 try:
@@ -676,7 +676,7 @@ class WiFiShieldHandler(asyncore.dispatcher_with_send):
                             else:
                                 print("not a sample packet")
                 except ValueError as e:
-                    print("failed to parse: %s" % data)
+                    print(f"failed to parse: {data}")
                     print(e)
                 except BaseException as e:
                     print(e)
@@ -700,7 +700,7 @@ class WiFiShieldServer(asyncore.dispatcher):
         pair = self.accept()
         if pair is not None:
             sock, addr = pair
-            print('Incoming connection from %s' % repr(addr))
+            print(f'Incoming connection from {repr(addr)}')
             self.handler = WiFiShieldHandler(sock, self.callback, high_speed=self.high_speed,
                                              parser=self.parser, daisy=self.daisy)
 

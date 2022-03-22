@@ -37,12 +37,12 @@ class IPluginExtended(IPlugin):
 
     # inherited from IPlugin
     def activate(self):
-        print("Plugin %s activated." % (self.__class__.__name__))
+        print(f"Plugin {self.__class__.__name__} activated.")
 
     # inherited from IPlugin
     def deactivate(self):
-        print("Plugin %s deactivated." % (self.__class__.__name__))
+        print(f"Plugin {self.__class__.__name__} deactivated.")
 
     # plugins that require arguments should implement this method
     def show_help(self):
-        print("I, %s, do not need any parameter." % (self.__class__.__name__))
+        print(f"I, {self.__class__.__name__}, do not need any parameter.")

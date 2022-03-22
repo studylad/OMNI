@@ -55,7 +55,7 @@ class UDPServer(object):
         self.ip = ip
         self.port = port
         self.json = json
-        print("Selecting raw UDP streaming. IP: ", self.ip, ", port: ", str(self.port))
+        print("Selecting raw UDP streaming. IP: ", self.ip, ", port: ", self.port)
         self.server = socket.socket(
             socket.AF_INET,  # Internet
             socket.SOCK_DGRAM)

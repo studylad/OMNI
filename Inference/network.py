@@ -215,7 +215,7 @@ class IncUNet_HR (nn.Module):
         en6add = self.e6add(en6)
         en7 = self.e7(en6add)
         en8 = self.e8(en7)
-        
+
         de1_ = self.d1(en8)
         de1 = torch.cat([en7,de1_],1)
         de2_ = self.d2(de1)
@@ -237,9 +237,7 @@ class IncUNet_HR (nn.Module):
         de9 = torch.cat([en2,de9_],1)
         de10_ = self.d10(de9)
         de10 = torch.cat([en1,de10_],1)
-        out = self.out_l(de10)
-        
-        return out
+        return self.out_l(de10)
 
 class IncUNet_BR (nn.Module):
     def __init__(self, in_shape):
@@ -411,7 +409,7 @@ class IncUNet_BR (nn.Module):
         en6add = self.e6add(en6)
         en7 = self.e7(en6add)
         en8 = self.e8(en7)
-        
+
         de1_ = self.d1(en8)
         de1 = torch.cat([en7,de1_],1)
         de2_ = self.d2(de1)
@@ -431,6 +429,4 @@ class IncUNet_BR (nn.Module):
         de8 = self.d8(de7)
         de8_ = self.d8(de7)
         de8 = torch.cat([en2add,de8_],1)
-        out = self.out_l(de8)
-        
-        return out
+        return self.out_l(de8)

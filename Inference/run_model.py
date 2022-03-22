@@ -28,7 +28,7 @@ def main(args):
     ###
     patient_ecg = np.asarray(windowed_patient_overlap['ecg'][0][:60])
     actual_ecg_windows = np.asarray(windowed_patient['ecg'][0][:60])
-    
+
     patient_ecg_br = np.asarray(windowed_patient_overlap_br['ecg'][0][:60])
     ###
 
@@ -47,8 +47,8 @@ def main(args):
     SAVED_HR_MODEL_PATH = args.saved_hr_model_path
     SAVED_BR_MODEL_PATH = args.saved_br_model_path
     device = args.device
-    
-    ecg_peak_locs = load_model_HR(SAVED_HR_MODEL_PATH,testloader,device,batch_len,window_size)     
+
+    ecg_peak_locs = load_model_HR(SAVED_HR_MODEL_PATH,testloader,device,batch_len,window_size)
     br_peak_locs = load_model_BR(SAVED_BR_MODEL_PATH,testloader_br,device,batch_len,window_size)
 
     ### Finding Stored Paths
@@ -60,16 +60,16 @@ def main(args):
 
     all_hr = []
     initial_hr = len([peak for peak in list(ecg_peak_locs) if peak < 5000 * 6])
-    
+
     for i in range(patient_ecg.shape[0]):
         all_hr.append( len([peak for peak in list(ecg_peak_locs) if peak > i * 2500 and peak < (i * 2500 ) + 5000 * 6 ]))
     unique = np.unique(np.asarray(all_hr))
     peak_no = np.linspace(1,len(ecg_peak_locs),len(ecg_peak_locs)).astype(int)
     peak_no = peak_no.reshape(-1,1)
-    ecg_peak_locs = ecg_peak_locs.reshape(-1,1) 
+    ecg_peak_locs = ecg_peak_locs.reshape(-1,1)
     ecg_peak_locs = np.hstack((peak_no,ecg_peak_locs))
 
-    pd.DataFrame(ecg_peak_locs).to_csv(save_path , header=None, index=None)  
+    pd.DataFrame(ecg_peak_locs).to_csv(save_path , header=None, index=None)
     print('-------- R Peaks Saved --------')
 
     all_br = []
@@ -86,25 +86,21 @@ def main(args):
     k = 0
     hr = []
     peak_locs = ecg_peak_locs[:,1]
-    for j in range(len(peak_locs)):     
-        if(peak_locs[j] < 5000*i):
-            scatter_peak.append(peak_locs[j]-5000*(i-1))
-            if(i< len(actual_ecg_windows)):
-                ecg_point.append(actual_ecg_windows[i-1,scatter_peak[k]])
-                k = k+1                         
-        elif(peak_locs[j] >= 5000*i):
+    for j in range(len(peak_locs)): 
+        if peak_locs[j] >= 5000 * i:
             scatter_peak_1.append(np.asarray(scatter_peak))
             hr.append(compute_heart_rate(scatter_peak_1[i-1]))
-            ecg_point_1.append(np.asarray(ecg_point))                     
+            ecg_point_1.append(np.asarray(ecg_point))
             scatter_peak = []
             ecg_point = []
             i = i+1
-            scatter_peak.append(peak_locs[j]-5000*(i-1))
             k = 0
-            if(i< len(actual_ecg_windows)):
-                ecg_point.append(actual_ecg_windows[i-1,scatter_peak[k]])
-                k = k+1
-    import pdb;pdb.set_trace()
+        scatter_peak.append(peak_locs[j]-5000*(i-1))
+        if(i< len(actual_ecg_windows)):
+            ecg_point.append(actual_ecg_windows[i-1,scatter_peak[k]])
+            k = k+1
+    import pdb
+    pdb.set_trace()
     if(args.viewer):
         create_dashboard(actual_ecg_windows,scatter_peak_1,all_hr,all_br)
     
